@@ -2,20 +2,22 @@
 # setup a mysql db in a docker container
 
 # install docker if it isn't already
-if ! sudo docker --version > /dev/null; then
-    curl https://get.docker.com | sudo bash
+if ! sudo docker --version; then
+    echo 'downloading docker'
+    curl https://get.docker.com | tac | tac | sudo bash
 fi
 
 MYSQL_DATABASE="bookshelve"
 
 create_container() {
+    echo 'creating container'
     sudo docker run -d \
         --name mysql \
         -p 3306:3306 \
         --health-cmd='mysqladmin ping --silent' \
         -e MYSQL_DATABASE="${MYSQL_DATABASE}" \
         -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
-        -e MYSQL_USER="${MSQL_USER}" \
+        -e MYSQL_USER="${MYSQL_USER}" \
         -e MYSQL_PASSWORD="${MYSQL_PASSWORD}" \
         mysql:5.7
         while [[ "$(sudo docker inspect --format "{{ .State.Health.Status }}" mysql)" != "healthy" ]]; do 
@@ -26,11 +28,13 @@ create_container() {
 }
 
 grant_user_read_access() {
+    echo 'granting user read access'
     command="grant select on ${MYSQL_DATABASE}.* to '${MYSQL_USER}'@'%' identified by '${MYSQL_PASSWORD}'";
     sudo docker exec -i mysql mysql --connect-timeout=90 -uroot -p${MYSQL_ROOT_PASSWORD} -e  "${command}"
 }
 
 run_sql_scripts() {
+    echo 'running sql scripts'
     sudo docker exec -i mysql mysql bookshelve \
         -uroot -p${MYSQL_ROOT_PASSWORD} < setup.sql 
 }
